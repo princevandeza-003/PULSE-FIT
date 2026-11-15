@@ -147,31 +147,57 @@ function vTools(){var p=D.p||{},g=tgt(),bmi=p.w&&p.h?p.w/Math.pow(p.h/100,2):0,h
  h+='</section><section class="card"><h3>1-rep max calculator</h3><div class="f"><div><label>Weight lifted (kg)</label><input id="rw" type="number" inputmode="decimal"></div><div><label>Reps done</label><input id="rr" type="number" inputmode="numeric"></div></div><button class="btn" data-a="rm">Calculate</button><p id="rmo" style="margin-top:10px"></p></section>';
  if(p.a){var mx=220-p.a;h+='<section class="card"><h3>Heart-rate zones</h3>'+[["Warm-up",.5,.6],["Fat burn",.6,.7],["Cardio",.7,.85],["Peak",.85,1]].map(function(z){return '<div class="li"><span>'+z[0]+'</span><b style="width:auto">'+Math.round(mx*z[1])+"–"+Math.round(mx*z[2])+' bpm</b></div>'}).join("")+'</section>'}
  h+=vcCard();return h+'<p class="mute" style="text-align:center">Pulse Fit gives general guidance, not medical advice. Check with a doctor before starting a new program.</p>'}
+var MU={ctx:null,run:false,duck:false,dt:0};
+var ST={
+chill:{r:1,p:1.05,start:"Let’s go.",go:"Go!",half:"Halfway. Keep it strong.",ten:"Ten seconds. Get ready.",fin:"Workout complete! Great work today.",rest:"Rest.",praise:["Nice work.","Strong set.","Great form.","Well done."]},
+hype:{r:1.08,p:.9,start:"Let’s get after it!",go:"Go go go!",half:"Halfway! Push!",ten:"Ten seconds! Get ready to attack!",fin:"Workout complete! That’s how it’s done!",rest:"Breathe.",praise:["Yes! Strong set!","Keep that fire!","Let’s go!","Crushing it!"]},
+beast:{r:1.12,p:.55,start:"Time to work! No excuses!",go:"Move! Now!",half:"Halfway! Don’t you dare slow down!",ten:"Ten seconds! Get back in there!",fin:"Done! You earned that! Now do it again tomorrow!",rest:"Catch your breath. Not long.",praise:["Yeah! That’s what I’m talking about!","Pain is temporary! Keep moving!","Own it!","You’re a machine!","Stay hungry!","Don’t quit on me now!"]}};
+function sty(){return ST[(D.vc&&D.vc.s)||"beast"]}
+function muGain(rest){var v=[.12,.22,.34][((D.mu&&D.mu.v)||2)-1];return v*(rest?.5:1)*(MU.duck?.3:1)}
+function nz(t,d,hp,v){var c=MU.ctx,src=c.createBufferSource(),f=c.createBiquadFilter(),g=c.createGain();src.buffer=MU.n;f.type="highpass";f.frequency.value=hp;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);src.connect(f);f.connect(g);g.connect(MU.m);src.start(t);src.stop(t+d+.02)}
+function muStep(s,t,bar,rest){var c=MU.ctx,R=[55,43.65,65.41,49][bar],spb=60/MU.bpm/4;
+ function env(g,v,d){g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d)}
+ if(s%4===0){var o=c.createOscillator(),g=c.createGain();o.frequency.setValueAtTime(160,t);o.frequency.exponentialRampToValueAtTime(42,t+.12);env(g,1,.28);o.connect(g);g.connect(MU.m);o.start(t);o.stop(t+.3)}
+ if(s===4||s===12)nz(t,.14,1200,.55);
+ if(!rest&&s%2===0)nz(t,s%4===2?.12:.04,7000,.22);
+ if([0,3,6,8,11,14].indexOf(s)>-1){var b=c.createOscillator(),f=c.createBiquadFilter(),h=c.createGain();b.type="sawtooth";b.frequency.value=R*(s===6||s===14?2:1);f.type="lowpass";f.frequency.value=320;env(h,.5,spb*3);b.connect(f);f.connect(h);h.connect(MU.m);b.start(t);b.stop(t+spb*3)}
+ if(!rest){var q=c.createOscillator(),qg=c.createGain();q.type="square";q.frequency.value=R*4*[1,1.189,1.5,1.782][[0,2,1,3][s%4]];env(qg,.05,spb*1.6);q.connect(qg);qg.connect(MU.m);q.start(t);q.stop(t+spb*1.6)}}
+function muTick(){var c=MU.ctx;if(!c||!MU.run)return;var rest=!!(W&&W.ph==="rest");if(MU.duck&&Date.now()-MU.dt>9000)MU.duck=false;MU.m.gain.setTargetAtTime(muGain(rest),c.currentTime,.08);
+ var spb=60/MU.bpm/4;while(MU.nt<c.currentTime+.12){muStep(MU.st%16,MU.nt,Math.floor(MU.st/16)%4,rest);MU.nt+=spb;MU.st++}}
+function musicStart(force){if(!force&&D.mu&&D.mu.on===false)return;var AC=window.AudioContext||window.webkitAudioContext;if(!AC||MU.run)return;
+ try{var c=MU.ctx=new AC();c.resume&&c.resume();MU.m=c.createGain();var cp=c.createDynamicsCompressor();MU.m.connect(cp);cp.connect(c.destination);MU.m.gain.value=muGain(false);
+  var n=c.createBuffer(1,c.sampleRate,c.sampleRate),d=n.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=Math.random()*2-1;MU.n=n;
+  MU.bpm=(D.mu&&D.mu.bpm)||140;MU.st=0;MU.nt=c.currentTime+.1;MU.run=true;MU.t=setInterval(muTick,25)}catch(e){MU.run=false}}
+function musicStop(){clearInterval(MU.t);MU.run=false;var c=MU.ctx;if(!c)return;try{MU.m.gain.setTargetAtTime(0,c.currentTime,.15)}catch(e){}setTimeout(function(){try{c.close()}catch(e){}},700);MU.ctx=null}
+function musicTest(){if(MU.run){musicStop();return}musicStart(true);setTimeout(function(){if(!W)musicStop()},6000)}
 var PRAISE=["Nice work.","Strong set.","That’s it, keep going.","Great form.","You’re crushing it.","Well done."];
-function speak(t,flush){var c=D.vc||{on:true,r:1};if(c.on===false||!window.speechSynthesis)return;try{if(flush)speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(t);u.rate=c.r||1;u.pitch=1.05;if(c.v){var v=speechSynthesis.getVoices().filter(function(x){return x.name===c.v})[0];if(v)u.voice=v}speechSynthesis.speak(u)}catch(e){}}
+function speak(t,flush){var c=D.vc||{on:true,r:1};if(c.on===false||!window.speechSynthesis)return;try{if(flush){speechSynthesis.cancel();MU.duck=false}var s=sty(),u=new SpeechSynthesisUtterance(t),vs=speechSynthesis.getVoices(),v=c.v?vs.filter(function(x){return x.name===c.v})[0]:(s.p<.7?vs.filter(function(x){return /^en/i.test(x.lang)&&/\b(male|david|daniel|alex|mark|james|fred|george|guy|ryan)\b/i.test(x.name)&&!/female/i.test(x.name)})[0]:null);if(v)u.voice=v;u.rate=(c.r||1)*s.r;u.pitch=s.p;u.volume=1;u.onstart=function(){MU.duck=true;MU.dt=Date.now()};u.onend=u.onerror=function(){MU.duck=false};speechSynthesis.speak(u)}catch(e){}}
 function cue(e){return secs(e[2])?", "+e[1]+" sets of "+secs(e[2])+" seconds":", "+e[1]+" sets of "+e[2]+" reps"}
-function goLine(){var e=cur();return "Go! "+e[0]+(secs(e[2])?". Tap start when you’re ready.":", "+e[2]+" reps.")}
-function vcCard(){if(!window.speechSynthesis)return '<section class="card"><h3>Voice coach</h3><p class="mute">Your browser doesn’t support spoken coaching.</p></section>';
- var c=D.vc||{on:true,r:1},vs=speechSynthesis.getVoices(),en=vs.filter(function(v){return /^en/i.test(v.lang)});vs=en.length?en:vs;
- return '<section class="card"><h3>Voice coach</h3><p class="mute">Spoken instructions and countdowns during workouts.</p><div class="row" style="margin:10px 0"><button class="chip" data-a="vc_on">'+(c.on===false?"Off":"✓ On")+'</button><button class="chip" data-a="vc_test">▶ Test voice</button></div><div class="f"><div><label>Voice</label><select id="vcv"><option value="">Default</option>'+vs.map(function(v){return '<option value="'+esc(v.name)+'"'+(c.v===v.name?" selected":"")+'>'+esc(v.name)+'</option>'}).join("")+'</select></div><div><label>Speed</label><select id="vcr">'+[.85,1,1.15,1.3].map(function(r){return '<option value="'+r+'"'+((c.r||1)===r?" selected":"")+'>'+r+'×</option>'}).join("")+'</select></div></div></section>'}
+function goLine(){var e=cur();return sty().go+" "+e[0]+(secs(e[2])?". Tap start when you’re ready.":", "+e[2]+" reps.")}
+function vcCard(){var m=D.mu||{on:true},c=D.vc||{on:true,r:1},vs=window.speechSynthesis?speechSynthesis.getVoices():[],en=vs.filter(function(v){return /^en/i.test(v.lang)});vs=en.length?en:vs;
+ var st=["chill","hype","beast"].map(function(k){return '<button class="chip" data-a="vc_st" data-id="'+k+'"'+((c.s||"beast")===k?' style="background:var(--acc);color:var(--aink);border-color:var(--acc)"':'')+'>'+k[0].toUpperCase()+k.slice(1)+'</button>'}).join("");
+ return '<section class="card"><h3>Coach & music</h3><p class="mute">Choose your coach’s intensity. Beast is loud, deep and demanding.</p><div class="row" style="margin:10px 0">'+st+'</div><div class="row"><button class="chip" data-a="vc_on">'+(c.on===false?"Voice off":"✓ Voice on")+'</button><button class="chip" data-a="vc_test">▶ Test voice</button><button class="chip" data-a="mu_on">'+(m.on===false?"Music off":"✓ Music on")+'</button><button class="chip" data-a="mu_test">▶ Test music</button></div>'
+ +'<div class="f" style="margin-top:10px"><div><label>Voice</label><select id="vcv"><option value="">Auto</option>'+vs.map(function(v){return '<option value="'+esc(v.name)+'"'+(c.v===v.name?" selected":"")+'>'+esc(v.name)+'</option>'}).join("")+'</select></div><div><label>Voice speed</label><select id="vcr">'+[.85,1,1.15,1.3].map(function(r){return '<option value="'+r+'"'+((c.r||1)===r?" selected":"")+'>'+r+'×</option>'}).join("")+'</select></div>'
+ +'<div><label>Music tempo</label><select id="mub">'+[[110,"Steady 110"],[128,"Pump 128"],[140,"Power 140"],[150,"Beast 150"]].map(function(x){return '<option value="'+x[0]+'"'+((m.bpm||140)===x[0]?" selected":"")+'>'+x[1]+'</option>'}).join("")+'</select></div><div><label>Music volume</label><select id="muv">'+[[1,"Low"],[2,"Medium"],[3,"High"]].map(function(x){return '<option value="'+x[0]+'"'+((m.v||2)===x[0]?" selected":"")+'>'+x[1]+'</option>'}).join("")+'</select></div></div>'
+ +'<p class="mute" style="margin-top:8px">Music is made live by the app. To use your own playlist, turn this off and play it in your music app.</p></section>'}
 /* ---- workout player ---- */
 function secs(r){return /s$/.test(r)?parseInt(r):0}
 function cur(){return WK[W.id][2][W.i]}
 function tot(){return WK[W.id][2].reduce(function(a,x){return a+x[1]},0)}
-function openW(id){W={id:id,i:0,s:1,ph:"work",t:secs(WK[id][2][0][2]),run:false,dn:0,tt:secs(WK[id][2][0][2])};clearInterval(iv);iv=setInterval(tick,1000);ow();var w0=WK[id];speak("Let’s go. "+w0[0]+", "+w0[2].length+" exercises. First up, "+w0[2][0][0]+cue(w0[2][0])+".",true)}
-function ow(){var o=$("ov");o.hidden=false;var w=WK[W.id],e=cur(),h='<div class="ph"><b class="disp" style="font-size:20px">'+esc(w[0])+'</b><div class="row"><button class="ib" data-a="p_vc" aria-label="Voice coach on or off">'+((D.vc||{}).on===false?"🔇":"🔊")+'</button><button class="ib" data-a="p_end" aria-label="Close">✕</button></div></div><div class="prog"><i style="width:'+Math.round(W.dn/tot()*100)+'%"></i></div><div class="stage">';
+function openW(id){W={id:id,i:0,s:1,ph:"work",t:secs(WK[id][2][0][2]),run:false,dn:0,tt:secs(WK[id][2][0][2])};clearInterval(iv);iv=setInterval(tick,1000);ow();var w0=WK[id];musicStart();speak(sty().start+" "+w0[0]+", "+w0[2].length+" exercises. First up, "+w0[2][0][0]+cue(w0[2][0])+".",true)}
+function ow(){var o=$("ov");o.hidden=false;var w=WK[W.id],e=cur(),h='<div class="ph"><b class="disp" style="font-size:20px">'+esc(w[0])+'</b><div class="row"><button class="ib" data-a="p_vc" aria-label="Voice coach on or off">'+((D.vc||{}).on===false?"🔇":"🔊")+'</button><button class="ib" data-a="p_mu" aria-label="Music on or off">'+((D.mu||{}).on===false?"🔕":"🎵")+'</button><button class="ib" data-a="p_end" aria-label="Close">✕</button></div></div><div class="prog"><i style="width:'+Math.round(W.dn/tot()*100)+'%"></i></div><div class="stage">';
  if(W.ph==="done"){var k=Math.round(w[1]*6.5*(((D.p&&D.p.w)||70)/70));h+='<div style="font-size:72px">🎉</div><h1>Workout complete</h1><p class="mute">'+w[1]+' min · about '+k+' kcal</p><button class="btn" data-a="p_end">Finish</button>'}
  else if(W.ph==="rest")h+='<div class="mute">REST</div><div class="big" id="tm">'+W.t+'</div><p class="mute">Next: <b>'+esc(e[0])+'</b> · set '+W.s+' of '+e[1]+'</p><div class="row" style="justify-content:center"><button class="btn ghost" data-a="p_add">+15s</button><button class="btn" data-a="p_skip">Skip rest</button></div>';
  else{var ts=secs(e[2]);h+='<div class="mute">Set '+W.s+' of '+e[1]+'</div><h2 class="xl">'+esc(e[0])+'</h2>'+(ts?'<div class="big" id="tm">'+W.t+'</div><div class="row" style="justify-content:center"><button class="btn" data-a="p_go">'+(W.run?"Pause":"Start")+'</button><button class="btn ghost" data-a="p_done">Done</button></div>':'<div class="big">'+e[2]+' <small>reps</small></div><button class="btn" data-a="p_done">Done set ✓</button>')}
  o.innerHTML=h+'</div>'}
 function tick(){if(!W||!W.run)return;W.t--;var el=$("tm");if(el)el.textContent=W.t;
- if(W.t>0&&W.t<=3)speak(String(W.t),true);else if(W.t===10&&W.ph==="rest")speak("Ten seconds. Get ready.");else if(W.ph==="work"&&W.tt>=30&&W.t===Math.floor(W.tt/2))speak("Halfway. Keep it strong.");
+ if(W.t>0&&W.t<=3)speak(String(W.t),true);else if(W.t===10&&W.ph==="rest")speak(sty().ten);else if(W.ph==="work"&&W.tt>=30&&W.t===Math.floor(W.tt/2))speak(sty().half);
  if(W.t<=0){beep();W.run=false;if(W.ph==="rest"){W.ph="work";W.t=W.tt=secs(cur()[2]);ow();speak(goLine(),true)}else pdone()}}
-function pdone(){var e=cur();W.dn++;if(W.dn>=tot()){clearInterval(iv);var w=WK[W.id];D.log.push({d:tod(),n:w[0],min:w[1],kcal:Math.round(w[1]*6.5*(((D.p&&D.p.w)||70)/70))});sv();W.ph="done";ow();speak("Workout complete! "+w[1]+" minutes done. Great work today.",true);return}
- if(W.s<e[1])W.s++;else{W.i++;W.s=1}W.ph="rest";W.t=secs(e[2])?30:45;W.run=true;ow();var ne=cur();speak(PRAISE[Math.random()*PRAISE.length|0]+" Rest. Next up, "+ne[0]+(W.s>1?", set "+W.s:"")+".",true)}
-function pact(a){if(a==="p_done")pdone();else if(a==="p_go"){W.run=!W.run;ow();if(W.run)speak("Go!",true)}else if(a==="p_add"){W.t+=15;$("tm").textContent=W.t}else if(a==="p_vc"){D.vc=D.vc||{on:true,r:1};D.vc.on=D.vc.on===false;sv();if(D.vc.on)speak("Voice coach on.",true);else try{speechSynthesis.cancel()}catch(e){}ow()}
- else if(a==="p_skip"){W.ph="work";W.t=W.tt=secs(cur()[2]);W.run=false;ow();speak(goLine(),true)}
- else if(a==="p_end"){clearInterval(iv);try{speechSynthesis.cancel()}catch(e){}W=null;$("ov").hidden=true;render()}}
+function pdone(){var e=cur();W.dn++;if(W.dn>=tot()){clearInterval(iv);var w=WK[W.id];D.log.push({d:tod(),n:w[0],min:w[1],kcal:Math.round(w[1]*6.5*(((D.p&&D.p.w)||70)/70))});sv();W.ph="done";ow();musicStop();speak(sty().fin+" "+w[1]+" minutes.",true);return}
+ if(W.s<e[1])W.s++;else{W.i++;W.s=1}W.ph="rest";W.t=secs(e[2])?30:45;W.run=true;ow();var ne=cur();speak(sty().praise[Math.random()*sty().praise.length|0]+" "+sty().rest+" Next up, "+ne[0]+(W.s>1?", set "+W.s:"")+".",true)}
+function pact(a){if(a==="p_done")pdone();else if(a==="p_go"){W.run=!W.run;ow();if(W.run)speak(sty().go,true)}else if(a==="p_add"){W.t+=15;$("tm").textContent=W.t}else if(a==="p_vc"){D.vc=D.vc||{on:true,r:1};D.vc.on=D.vc.on===false;sv();if(D.vc.on)speak("Voice coach on.",true);else try{speechSynthesis.cancel()}catch(e){}ow()}
+ else if(a==="p_mu"){D.mu=D.mu||{on:true};D.mu.on=D.mu.on===false;sv();if(D.mu.on)musicStart();else musicStop();ow()}else if(a==="p_skip"){W.ph="work";W.t=W.tt=secs(cur()[2]);W.run=false;ow();speak(goLine(),true)}
+ else if(a==="p_end"){clearInterval(iv);musicStop();try{speechSynthesis.cancel()}catch(e){}W=null;$("ov").hidden=true;render()}}
 /* ---- actions ---- */
 document.addEventListener("click",function(e){var el=e.target.closest("[data-a],[data-t]");if(!el)return;
  if(el.dataset.t){tab=el.dataset.t;open=null;render();return}
@@ -180,7 +206,7 @@ document.addEventListener("click",function(e){var el=e.target.closest("[data-a],
  if(a==="goal"){D.p=D.p||{};D.p.goal=el.dataset.g;D.plan={lose:"fat",keep:"start",gain:"muscle"}[el.dataset.g];D.planStart=t}
  else if(a==="plan")open=id;else if(a==="plans")open=null;
  else if(a==="setplan"){D.plan=id;D.planStart=t;toast("Plan started")}
- else if(a==="vc_on"){D.vc=D.vc||{on:true,r:1};D.vc.on=D.vc.on===false}else if(a==="vc_test"){speak("Alright, let’s get moving. You’ve got this!",true);return}
+ else if(a==="vc_on"){D.vc=D.vc||{on:true,r:1};D.vc.on=D.vc.on===false}else if(a==="vc_st"){D.vc=D.vc||{on:true,r:1};D.vc.s=id;speak(sty().start+" Let’s train.",true)}else if(a==="mu_on"){D.mu=D.mu||{on:true};D.mu.on=D.mu.on===false}else if(a==="mu_test"){musicTest();return}else if(a==="vc_test"){speak("Alright, let’s get moving. You’ve got this!",true);return}
  else if(a==="start"){openW(id);return}
  else if(a==="wp")D.water[t]=(D.water[t]||0)+1;else if(a==="wm")D.water[t]=Math.max(0,(D.water[t]||0)-1);
  else if(a==="meal"){var n=$("mn").value.trim(),k=+$("mk").value;if(!n||!(k>0))return toast("Add a meal and its calories");(D.meals[t]=D.meals[t]||[]).push({n:n.slice(0,40),k:Math.round(k)})}
@@ -189,7 +215,9 @@ document.addEventListener("click",function(e){var el=e.target.closest("[data-a],
  else if(a==="prof"){D.name=$("pn").value.trim().slice(0,20);D.p=D.p||{};D.p.a=+$("pa").value||0;D.p.sex=$("ps").value;D.p.h=+$("ph").value||0;D.p.w=+$("pw").value||0;D.p.act=+$("pc").value;D.p.goal=$("pg").value;toast("Profile saved")}
  else if(a==="rm"){var w=+$("rw").value,r=+$("rr").value;$("rmo").textContent=w>0&&r>0?"Estimated 1RM: "+Math.round(r===1?w:w*(1+r/30))+" kg":"Enter the weight and reps.";return}
  sv();render()});
-document.addEventListener("change",function(e){var t=e.target.id;if(t!=="vcv"&&t!=="vcr")return;D.vc=D.vc||{on:true,r:1};if(t==="vcv")D.vc.v=e.target.value;else D.vc.r=+e.target.value;sv();speak("This is your coach voice.",true)});
+document.addEventListener("change",function(e){var t=e.target.id;if(["vcv","vcr","mub","muv"].indexOf(t)<0)return;D.vc=D.vc||{on:true,r:1};D.mu=D.mu||{on:true};
+ if(t==="vcv")D.vc.v=e.target.value;else if(t==="vcr")D.vc.r=+e.target.value;else if(t==="mub")D.mu.bpm=+e.target.value;else D.mu.v=+e.target.value;
+ sv();if(t==="vcv"||t==="vcr")speak(sty().start+" This is your coach.",true);else if(MU.run){MU.bpm=D.mu.bpm||140}});
 try{speechSynthesis.onvoiceschanged=function(){if(tab==="tools")render()}}catch(e){}
 $("th").onclick=function(){var d=document.documentElement,dk=matchMedia("(prefers-color-scheme:dark)").matches,n=d.dataset.theme||(dk?"dark":"light");d.dataset.theme=n==="dark"?"light":"dark"};
 async function push(){var u=await sb.auth.getUser();if(!u.data.user)return;var r=await sb.from("pf_data").upsert({user_id:u.data.user.id,data:D,updated_at:new Date().toISOString()});setSync(r.error?"⚠️ Not synced":"☁️ Synced")}
