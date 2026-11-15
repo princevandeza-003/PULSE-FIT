@@ -69,6 +69,7 @@ h3::before{content:"";width:18px;height:3px;border-radius:2px;background:var(--a
 @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .card,.stage>*{animation:rise .4s ease both}.stage>*:nth-child(2){animation-delay:.05s}.stage>*:nth-child(3){animation-delay:.1s}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+.fig{display:block;width:min(78vw,300px);max-height:30vh;height:auto;margin:0 auto}.cap{min-height:22px;font-weight:600;color:var(--acc);text-align:center;font-size:15px}.big{font-size:72px}.xl{font-size:36px}.stage{overflow:auto}
 </style>
 </head>
 <body>
@@ -180,16 +181,107 @@ function vcCard(){var m=D.mu||{on:true},c=D.vc||{on:true,r:1},vs=window.speechSy
  +'<div class="f" style="margin-top:10px"><div><label>Voice</label><select id="vcv"><option value="">Auto</option>'+vs.map(function(v){return '<option value="'+esc(v.name)+'"'+(c.v===v.name?" selected":"")+'>'+esc(v.name)+'</option>'}).join("")+'</select></div><div><label>Voice speed</label><select id="vcr">'+[.85,1,1.15,1.3].map(function(r){return '<option value="'+r+'"'+((c.r||1)===r?" selected":"")+'>'+r+'×</option>'}).join("")+'</select></div>'
  +'<div><label>Music tempo</label><select id="mub">'+[[110,"Steady 110"],[128,"Pump 128"],[140,"Power 140"],[150,"Beast 150"]].map(function(x){return '<option value="'+x[0]+'"'+((m.bpm||140)===x[0]?" selected":"")+'>'+x[1]+'</option>'}).join("")+'</select></div><div><label>Music volume</label><select id="muv">'+[[1,"Low"],[2,"Medium"],[3,"High"]].map(function(x){return '<option value="'+x[0]+'"'+((m.v||2)===x[0]?" selected":"")+'>'+x[1]+'</option>'}).join("")+'</select></div></div>'
  +'<p class="mute" style="margin-top:8px">Music is made live by the app. To use your own playlist, turn this off and play it in your music app.</p></section>'}
+var G=232,HX=150,LT=58,LU=30,LF=28,LH=38,LS=38,RM=false;try{RM=matchMedia("(prefers-reduced-motion:reduce)").matches}catch(e){}
+var A={t:0,k:"",raf:0,last:0};
+var EXD={
+"Bodyweight squat":{f:0,ms:1000,p:[[0,20,20,20,20,0,0,0,0,0],[30,85,85,85,85,85,-15,85,-15,0]]},
+"Incline push-up":{f:0,ms:900,p:[[64,0,0,0,0,-64,-64,-64,-64,0],[80,-60,68,-60,68,-80,-80,-80,-80,0]]},
+"Glute bridge":{f:2,ms:1000,p:[[-92,90,90,90,90,120,30,120,30,0],[-125,90,90,90,90,60,5,60,5,0]]},
+"Plank":{f:1,ms:1400,p:[[64,0,90,0,90,-64,-64,-64,-64,0],[66,0,90,0,90,-64,-64,-64,-64,0]]},
+"Bird dog":{f:3,ms:1200,p:[[70,0,0,0,0,0,-90,0,-90,0],[70,90,90,0,0,0,-90,-90,-90,0]]},
+"Jumping jacks":{f:0,ms:380,p:[[0,6,6,-6,-6,6,6,-6,-6,0],[0,160,170,-160,-170,22,22,-22,-22,14]]},
+"Mountain climbers":{f:1,ms:320,p:[[64,0,0,0,0,40,-50,-64,-64,0],[64,0,0,0,0,-64,-64,40,-50,0]]},
+"Squat jumps":{f:0,ms:600,p:[[30,85,85,85,85,85,-15,85,-15,0],[0,170,170,170,170,0,0,0,0,26]]},
+"High knees":{f:0,ms:300,p:[[5,-35,40,40,100,85,5,0,0,4],[5,40,100,-35,40,0,0,85,5,4]]},
+"Burpees":{f:0,ms:450,p:[[0,0,0,0,0,0,0,0,0,0],[60,25,25,25,25,110,-25,110,-25,0],[64,0,0,0,0,-64,-64,-64,-64,0],[60,25,25,25,25,110,-25,110,-25,0],[0,170,170,170,170,0,0,0,0,24]]},
+"Pike push-up":{f:0,ms:1000,p:[[125,55,55,55,55,-30,-30,-30,-30,0],[132,35,65,35,65,-30,-30,-30,-30,0]]},
+"Chair dips":{f:0,ms:900,d:"chair",p:[[0,-15,-15,-15,-15,74,74,74,74,0],[0,-60,23,-60,23,86,86,86,86,0]]},
+"Plank shoulder taps":{f:1,ms:500,p:[[66,0,0,0,0,-66,-66,-66,-66,0],[66,60,150,0,0,-66,-66,-66,-66,0],[66,0,0,0,0,-66,-66,-66,-66,0],[66,0,0,60,150,-66,-66,-66,-66,0]]},
+"Pull-ups or rows":{f:0,ms:900,p:[[70,0,0,0,0,15,-10,15,-10,0],[70,-110,5,-110,5,15,-10,15,-10,0]]},
+"Superman hold":{f:0,ms:1100,p:[[90,90,90,90,90,-90,-90,-90,-90,0],[80,115,115,115,115,-115,-115,-115,-115,0]]},
+"Reverse snow angels":{f:0,ms:900,p:[[85,-100,-100,-100,-100,-92,-92,-92,-92,0],[85,100,100,100,100,-92,-92,-92,-92,0]]},
+"Bicep curls":{f:0,ms:800,p:[[0,0,0,0,0,0,0,0,0,0],[0,0,150,0,150,0,0,0,0,0]]},
+"Dead hang":{f:0,ms:1500,d:"bar",p:[[0,180,180,180,180,6,6,6,6,18],[2,180,180,180,180,10,10,4,4,16]]},
+"Lunges (each leg)":{f:0,ms:1000,p:[[0,0,0,0,0,0,0,0,0,0],[5,0,0,0,0,85,0,-5,-85,0]]},
+"Calf raises":{f:0,ms:700,p:[[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,12]]},
+"Wall sit":{f:0,ms:1500,d:"wall",p:[[0,60,60,60,60,90,0,90,0,0],[1,60,60,60,60,90,0,90,0,0]]},
+"Crunches":{f:0,ms:800,p:[[-97,80,80,80,80,125,40,125,40,0],[-55,80,80,80,80,125,40,125,40,0]]},
+"Leg raises":{f:0,ms:1100,p:[[-92,88,88,88,88,85,85,85,85,0],[-92,88,88,88,88,172,172,172,172,0]]},
+"Russian twists":{f:0,ms:600,p:[[-35,60,60,60,60,125,125,125,125,0],[-35,115,115,115,115,125,125,125,125,0]]},
+"Dead bug":{f:0,ms:1100,p:[[-92,180,180,180,180,180,90,180,90,0],[-92,-90,-90,180,180,180,90,95,95,0]]},
+"Cat–cow":{f:3,ms:1300,p:[[70,0,0,0,0,0,-90,0,-90,0,-40],[70,0,0,0,0,0,-90,0,-90,0,60]]},
+"Downward dog":{f:0,ms:1500,p:[[125,55,55,55,55,-30,-30,-30,-30,0],[127,55,55,55,55,-27,-34,-30,-30,0]]},
+"Low lunge (each side)":{f:0,ms:1500,p:[[0,175,175,175,175,85,0,-5,-85,0],[4,150,150,150,150,85,0,-5,-85,0]]},
+"Pigeon pose (each side)":{f:0,ms:1800,p:[[8,0,0,0,0,80,-95,-85,-85,0],[75,80,80,80,80,80,-95,-85,-85,0]]},
+"Child’s pose":{f:0,ms:1800,p:[[95,90,90,90,90,55,-90,55,-90,0],[88,100,100,100,100,55,-90,55,-90,0]]},
+"Brisk walk, jog or cycle":{f:0,ms:400,p:[[4,-30,10,30,60,25,5,-20,-35,2],[4,30,60,-30,10,-20,-35,25,5,2]]}};
+EXD["Squats"]=EXD["Bodyweight squat"];EXD["Push-ups"]=EXD["Diamond push-up"]=EXD["Incline push-up"];
+var CAP={
+"Bodyweight squat":["Stand tall, feet shoulder-width","Sit back and down, chest up"],
+"Incline push-up":["Strong plank, body in one line","Lower your chest, elbows back"],
+"Glute bridge":["Lie back, knees bent","Squeeze glutes, lift hips"],
+"Plank":["Forearms down, body straight","Brace your core and keep breathing"],
+"Bird dog":["Hands under shoulders, knees under hips","Reach opposite arm and leg long"],
+"Jumping jacks":["Feet together, arms down","Jump wide, arms overhead"],
+"Mountain climbers":["Plank, drive one knee in","Switch legs fast"],
+"Squat jumps":["Drop into a squat","Explode up, arms overhead"],
+"High knees":["Drive one knee up, opposite arm forward","Switch and keep it quick"],
+"Burpees":["Stand tall","Squat, hands to the floor","Jump back to plank","Jump feet in","Explode up, arms overhead"],
+"Pike push-up":["Hips high, head between your arms","Bend elbows, lower your head"],
+"Chair dips":["Arms straight, hips off the seat","Bend elbows, lower your hips"],
+"Plank shoulder taps":["Strong plank","Tap one shoulder, keep hips still","Back to plank","Tap the other shoulder"],
+"Pull-ups or rows":["Hinge forward, arms hang","Pull elbows back, squeeze shoulder blades"],
+"Superman hold":["Lie face down, arms long","Lift chest, arms and legs"],
+"Reverse snow angels":["Arms by your sides, chest lifted","Sweep arms forward overhead"],
+"Bicep curls":["Arms down at your sides","Curl up, elbows stay still"],
+"Dead hang":["Grip the bar, arms long","Shoulders active, body still"],
+"Lunges (each leg)":["Stand tall","Step out, drop the back knee"],
+"Calf raises":["Stand tall","Rise onto your toes"],
+"Wall sit":["Back flat on the wall","Thighs level, hold steady"],
+"Crunches":["Lie back, knees bent","Curl shoulders off the floor"],
+"Leg raises":["Legs low, back flat","Lift legs straight up"],
+"Russian twists":["Lean back, hands together","Rotate side to side"],
+"Dead bug":["Knees over hips, arms up","Lower opposite arm and leg"],
+"Cat–cow":["Cow: look up, let your belly drop","Cat: round your back, chin tucked"],
+"Downward dog":["Hips high, press the floor away","Pedal your heels, breathe"],
+"Low lunge (each side)":["Front knee over ankle, arms up","Sink your hips forward and reach"],
+"Pigeon pose (each side)":["Front shin across, sit tall","Fold forward and breathe"],
+"Child’s pose":["Hips back to your heels","Reach forward, relax your shoulders"],
+"Brisk walk, jog or cycle":["One leg forward, opposite arm swings","Switch sides, steady rhythm"]};
+CAP["Squats"]=CAP["Bodyweight squat"];CAP["Push-ups"]=CAP["Diamond push-up"]=CAP["Incline push-up"];
+function pts(p,t,ld){var r=Math.PI/180,hip=[HX,0],sh=[HX+LT*Math.sin(t*r),-LT*Math.cos(t*r)];
+ function seg(o,a,L){return [o[0]+L*Math.sin(a*r),o[1]+L*Math.cos(a*r)]}
+ var eN=seg(sh,p[1],LU),hN=seg(eN,p[2],LF),eF=seg(sh,p[3],LU),hF=seg(eF,p[4],LF),kN=seg(hip,p[5]+ld,LH),aN=seg(kN,p[6]+ld,LS),kF=seg(hip,p[7]+ld,LH),aF=seg(kF,p[8]+ld,LS),hd=[sh[0]+20*Math.sin((t+(p[10]||0))*r),sh[1]-20*Math.cos((t+(p[10]||0))*r)];
+ return {hip:hip,sh:sh,eN:eN,hN:hN,eF:eF,hF:hF,kN:kN,aN:aN,kF:kF,aF:aF,hd:hd}}
+function solve(p,f){if(!f)return {t:p[0],ld:0};var best=1e9,bt=p[0],bl=0;
+ for(var d=-50;d<=50;d++){var l=f===1?-d:0,P=pts(p,p[0]+d,l),up=f===2?Math.max(P.sh[1],P.hd[1]):Math.max(P.hN[1],P.hF[1]),dn=Math.max(P.aN[1],P.aF[1]),e=Math.abs(up-dn);if(e<best){best=e;bt=p[0]+d;bl=l}}
+ return {t:bt,ld:bl}}
+function draw(q,f){var sl=solve(q,f),P=pts(q,sl.t,sl.ld),ys=[P.hip[1],P.sh[1],P.hd[1]+11,P.eN[1],P.hN[1],P.eF[1],P.hF[1],P.kN[1],P.aN[1],P.kF[1],P.aF[1]],dy=G-Math.max.apply(0,ys)-q[9];
+ function L(id,a,b){var e=$("g_"+id);e.setAttribute("x1",a[0]);e.setAttribute("y1",a[1]+dy);e.setAttribute("x2",b[0]);e.setAttribute("y2",b[1]+dy)}
+ L("sF",P.sh,P.eF);L("eF",P.eF,P.hF);L("lF",P.hip,P.kF);L("kF",P.kF,P.aF);L("tr",P.hip,P.sh);L("sN",P.sh,P.eN);L("eN",P.eN,P.hN);L("lN",P.hip,P.kN);L("kN",P.kN,P.aN);
+ var h=$("g_hd");h.setAttribute("cx",P.hd[0]);h.setAttribute("cy",P.hd[1]+dy);var hp=$("g_hp");hp.setAttribute("cx",P.hip[0]);hp.setAttribute("cy",P.hip[1]+dy)}
+var SEG=[["sF","var(--mute)",8,.75],["eF","var(--mute)",7,.75],["lF","var(--mute)",10,.75],["kF","var(--mute)",9,.75],["tr","var(--ink)",14,1],["sN","var(--acc)",8,1],["eN","var(--acc)",7,1],["lN","var(--acc)",10,1],["kN","var(--acc)",9,1]];
+function figHTML(name){var d=(EXD[name]||{}).d,s='<svg id="g_fig" class="fig" viewBox="0 0 300 250" role="img" aria-label="Animated demo: '+esc(name)+'"><line x1="10" y1="'+(G+5)+'" x2="290" y2="'+(G+5)+'" stroke="var(--line)" stroke-width="4" stroke-linecap="round"/>';
+ if(d==="wall")s+='<line x1="'+(HX-20)+'" y1="40" x2="'+(HX-20)+'" y2="'+(G+5)+'" stroke="var(--line)" stroke-width="8"/>';
+ if(d==="bar")s+='<line x1="'+(HX-50)+'" y1="'+(G-212)+'" x2="'+(HX+50)+'" y2="'+(G-212)+'" stroke="var(--mute)" stroke-width="6" stroke-linecap="round"/>';
+ if(d==="chair")s+='<rect x="'+(HX-72)+'" y="'+(G-28)+'" width="58" height="33" rx="3" fill="var(--line)"/>';
+ SEG.forEach(function(x){s+='<line id="g_'+x[0]+'" stroke="'+x[1]+'" stroke-width="'+x[2]+'" stroke-linecap="round" opacity="'+x[3]+'"/>'});
+ return s+'<circle id="g_hp" r="8" fill="var(--ink)"/><circle id="g_hd" r="11" fill="var(--ink)" stroke="var(--bg)" stroke-width="2"/></svg><div class="cap" id="g_cap"></div>'}
+function step(ts){if(!W||W.ph==="done"||!$("g_fig"))return;var e=cur(),k=W.id+":"+W.i+":"+W.s+":"+W.ph;if(k!==A.k){A.k=k;A.t=0}
+ var act=W.ph==="work"&&(secs(e[2])?W.run:true)&&!RM,dt=A.last?Math.min(60,ts-A.last):0;A.last=ts;if(act)A.t+=dt;
+ var X=EXD[e[0]]||EXD["Bodyweight squat"],P=X.p,n=P.length,u=(A.t%(n*X.ms))/X.ms,i=Math.floor(u),fr=u-i,s=fr*fr*(3-2*fr),a=P[i],b=P[(i+1)%n];
+ draw(a.map(function(v,j){return v+(b[j]-v)*s}),X.f);var cp=(CAP[e[0]]||[])[Math.round(u)%n]||"",ce=$("g_cap");if(ce&&ce.textContent!==cp)ce.textContent=cp}
+function frame(ts){A.raf=requestAnimationFrame(frame);step(ts)}
 /* ---- workout player ---- */
 function secs(r){return /s$/.test(r)?parseInt(r):0}
 function cur(){return WK[W.id][2][W.i]}
 function tot(){return WK[W.id][2].reduce(function(a,x){return a+x[1]},0)}
-function openW(id){W={id:id,i:0,s:1,ph:"work",t:secs(WK[id][2][0][2]),run:false,dn:0,tt:secs(WK[id][2][0][2])};clearInterval(iv);iv=setInterval(tick,1000);ow();var w0=WK[id];musicStart();speak(sty().start+" "+w0[0]+", "+w0[2].length+" exercises. First up, "+w0[2][0][0]+cue(w0[2][0])+".",true)}
+function openW(id){W={id:id,i:0,s:1,ph:"work",t:secs(WK[id][2][0][2]),run:false,dn:0,tt:secs(WK[id][2][0][2])};clearInterval(iv);iv=setInterval(tick,1000);ow();var w0=WK[id];musicStart();if(!A.raf)A.raf=requestAnimationFrame(frame);speak(sty().start+" "+w0[0]+", "+w0[2].length+" exercises. First up, "+w0[2][0][0]+cue(w0[2][0])+".",true)}
 function ow(){var o=$("ov");o.hidden=false;var w=WK[W.id],e=cur(),h='<div class="ph"><b class="disp" style="font-size:20px">'+esc(w[0])+'</b><div class="row"><button class="ib" data-a="p_vc" aria-label="Voice coach on or off">'+((D.vc||{}).on===false?"🔇":"🔊")+'</button><button class="ib" data-a="p_mu" aria-label="Music on or off">'+((D.mu||{}).on===false?"🔕":"🎵")+'</button><button class="ib" data-a="p_end" aria-label="Close">✕</button></div></div><div class="prog"><i style="width:'+Math.round(W.dn/tot()*100)+'%"></i></div><div class="stage">';
  if(W.ph==="done"){var k=Math.round(w[1]*6.5*(((D.p&&D.p.w)||70)/70));h+='<div style="font-size:72px">🎉</div><h1>Workout complete</h1><p class="mute">'+w[1]+' min · about '+k+' kcal</p><button class="btn" data-a="p_end">Finish</button>'}
- else if(W.ph==="rest")h+='<div class="mute">REST</div><div class="big" id="tm">'+W.t+'</div><p class="mute">Next: <b>'+esc(e[0])+'</b> · set '+W.s+' of '+e[1]+'</p><div class="row" style="justify-content:center"><button class="btn ghost" data-a="p_add">+15s</button><button class="btn" data-a="p_skip">Skip rest</button></div>';
- else{var ts=secs(e[2]);h+='<div class="mute">Set '+W.s+' of '+e[1]+'</div><h2 class="xl">'+esc(e[0])+'</h2>'+(ts?'<div class="big" id="tm">'+W.t+'</div><div class="row" style="justify-content:center"><button class="btn" data-a="p_go">'+(W.run?"Pause":"Start")+'</button><button class="btn ghost" data-a="p_done">Done</button></div>':'<div class="big">'+e[2]+' <small>reps</small></div><button class="btn" data-a="p_done">Done set ✓</button>')}
- o.innerHTML=h+'</div>'}
+ else if(W.ph==="rest")h+=figHTML(e[0])+'<div class="mute">REST</div><div class="big" id="tm">'+W.t+'</div><p class="mute">Next: <b>'+esc(e[0])+'</b> · set '+W.s+' of '+e[1]+'</p><div class="row" style="justify-content:center"><button class="btn ghost" data-a="p_add">+15s</button><button class="btn" data-a="p_skip">Skip rest</button></div>';
+ else{var ts=secs(e[2]);h+=figHTML(e[0])+'<div class="mute">Set '+W.s+' of '+e[1]+'</div><h2 class="xl">'+esc(e[0])+'</h2>'+(ts?'<div class="big" id="tm">'+W.t+'</div><div class="row" style="justify-content:center"><button class="btn" data-a="p_go">'+(W.run?"Pause":"Start")+'</button><button class="btn ghost" data-a="p_done">Done</button></div>':'<div class="big">'+e[2]+' <small>reps</small></div><button class="btn" data-a="p_done">Done set ✓</button>')}
+ o.innerHTML=h+'</div>';if(W.ph!=="done")step(A.last)}
 function tick(){if(!W||!W.run)return;W.t--;var el=$("tm");if(el)el.textContent=W.t;
  if(W.t>0&&W.t<=3)speak(String(W.t),true);else if(W.t===10&&W.ph==="rest")speak(sty().ten);else if(W.ph==="work"&&W.tt>=30&&W.t===Math.floor(W.tt/2))speak(sty().half);
  if(W.t<=0){beep();W.run=false;if(W.ph==="rest"){W.ph="work";W.t=W.tt=secs(cur()[2]);ow();speak(goLine(),true)}else pdone()}}
@@ -197,7 +289,7 @@ function pdone(){var e=cur();W.dn++;if(W.dn>=tot()){clearInterval(iv);var w=WK[W
  if(W.s<e[1])W.s++;else{W.i++;W.s=1}W.ph="rest";W.t=secs(e[2])?30:45;W.run=true;ow();var ne=cur();speak(sty().praise[Math.random()*sty().praise.length|0]+" "+sty().rest+" Next up, "+ne[0]+(W.s>1?", set "+W.s:"")+".",true)}
 function pact(a){if(a==="p_done")pdone();else if(a==="p_go"){W.run=!W.run;ow();if(W.run)speak(sty().go,true)}else if(a==="p_add"){W.t+=15;$("tm").textContent=W.t}else if(a==="p_vc"){D.vc=D.vc||{on:true,r:1};D.vc.on=D.vc.on===false;sv();if(D.vc.on)speak("Voice coach on.",true);else try{speechSynthesis.cancel()}catch(e){}ow()}
  else if(a==="p_mu"){D.mu=D.mu||{on:true};D.mu.on=D.mu.on===false;sv();if(D.mu.on)musicStart();else musicStop();ow()}else if(a==="p_skip"){W.ph="work";W.t=W.tt=secs(cur()[2]);W.run=false;ow();speak(goLine(),true)}
- else if(a==="p_end"){clearInterval(iv);musicStop();try{speechSynthesis.cancel()}catch(e){}W=null;$("ov").hidden=true;render()}}
+ else if(a==="p_end"){clearInterval(iv);musicStop();cancelAnimationFrame(A.raf);A.raf=0;A.k="";try{speechSynthesis.cancel()}catch(e){}W=null;$("ov").hidden=true;render()}}
 /* ---- actions ---- */
 document.addEventListener("click",function(e){var el=e.target.closest("[data-a],[data-t]");if(!el)return;
  if(el.dataset.t){tab=el.dataset.t;open=null;render();return}
