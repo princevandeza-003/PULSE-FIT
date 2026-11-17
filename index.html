@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0b0e0a">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-title" content="Pulse Fit"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Pulse Fit</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="api.js"></script>
@@ -116,7 +117,7 @@ nav button{font-size:11px}
 <body>
 <div class="ov" id="auth"><div class="box"><div class="brand" style="font-size:38px">PULSE<span>FIT</span></div><p class="mute">Log in to save your plans and progress to your account and use them on any device.</p><input id="em" type="email" placeholder="Email" autocomplete="email"><input id="pw" type="password" placeholder="Password (8+ characters)" autocomplete="current-password"><button class="btn" id="lin" style="margin:0">Log in</button><button class="btn ghost" id="sup" style="margin:0">Create account</button><button class="chip" id="skip">Continue without an account</button><p class="err" id="aerr"></p></div></div>
 <div id="app">
-<header><div class="brand">PULSE<span>FIT</span></div><div class="row"><span id="sync" class="mute"></span><button class="ib" id="acct" aria-label="Account">👤</button><button class="ib" data-a="fs" aria-label="Full screen">⛶</button><button class="ib" id="th" aria-label="Switch theme">◐</button></div></header>
+<header><div class="brand">PULSE<span>FIT</span></div><div class="row"><span id="sync" class="mute"></span><button class="ib" id="acct" aria-label="Account">👤</button><button class="ib" id="inst" data-a="inst" aria-label="Install app" hidden>⬇</button><button class="ib" data-a="fs" aria-label="Full screen">⛶</button><button class="ib" id="th" aria-label="Switch theme">◐</button></div></header>
 <main id="view"></main>
 <nav id="tabs"><button data-t="today"><i>🏠</i>Today</button><button data-t="plans"><i>📋</i>Plans</button><button data-t="lib"><i>📚</i>Library</button><button data-t="track"><i>📈</i>Track</button><button data-t="tools"><i>🧮</i>Tools</button></nav>
 </div>
@@ -432,6 +433,7 @@ document.addEventListener("click",function(e){var el=e.target.closest("[data-a],
  else if(a==="gw")D.gw=+id;
  else if(a==="food"){var fd=FOODS[+id],fq=Math.max(.25,+$("fqty").value||1);(D.meals[t]=D.meals[t]||[]).push({n:fd[0]+(fq!==1?" ×"+fq:""),k:Math.round(fd[2]*fq),p:Math.round(fd[3]*fq),c:Math.round(fd[4]*fq),f:Math.round(fd[5]*fq)});toast("Added")}
  else if(a==="bk_ex"){exportBk();return}
+ else if(a==="inst"){if(IP){IP.prompt();IP=null;$("inst").hidden=true}return}
  else if(a==="start"){openW(id);return}
  else if(a==="wp")D.water[t]=(D.water[t]||0)+1;else if(a==="wm")D.water[t]=Math.max(0,(D.water[t]||0)-1);
  else if(a==="meal"){var n=$("mn").value.trim(),k=+$("mk").value;if(!n||!(k>0))return toast("Add a meal and its calories");(D.meals[t]=D.meals[t]||[]).push({n:n.slice(0,40),k:Math.round(k)})}
@@ -467,6 +469,9 @@ $("acct").onclick=async function(){var r=await sb.auth.getSession();if(!r.data.s
  var c=prompt("Type LOGOUT to log out, or DELETE to erase your cloud data and log out.");if(!c)return;c=c.trim().toUpperCase();
  if(c==="DELETE"){await sb.from("pf_data").delete().eq("user_id",r.data.session.user.id)}
  if(c==="LOGOUT"||c==="DELETE"){await sb.auth.signOut();location.reload()}};
+var IP=null;window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();IP=e;$("inst").hidden=false});
+window.addEventListener("appinstalled",function(){IP=null;$("inst").hidden=true;toast("Pulse Fit installed")});
+if("serviceWorker" in navigator)window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})});
 render();initAuth();
 </script>
 </body>
